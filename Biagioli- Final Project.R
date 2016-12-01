@@ -4,7 +4,6 @@ library(stringr)
 library(dplyr)
 library(tidyverse)
 
-
 #twitter authentication
 setup_twitter_oauth(consumer_key = getOption("twitter_api_key"),
                     consumer_secret = getOption("twitter_api_token"))

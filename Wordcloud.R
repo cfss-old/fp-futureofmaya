@@ -19,9 +19,10 @@ library(dplyr )
 library(rtweet)
 library(tidyverse)
 
-allthetweets <-read_csv("allthetweets.csv")
+allthetweets <-read_csv("allthetweets.csv") %>%
+  distinct()
 tweetswords <- allthetweets %>%
-  select(text, created) 
+  select(text, created, id) 
 
 tweetswords %>%
   head() %>%

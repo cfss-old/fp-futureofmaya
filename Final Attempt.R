@@ -841,4 +841,3 @@ excel5 <- read_csv("tweets_161016_to_161130.csv")
 allthetweets <- bind_rows(excel1,excel2,excel3,excel4,excel5)
 write_csv(allthetweets, "allthetweets.csv")
 
-View(allthetweets)

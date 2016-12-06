@@ -18,9 +18,8 @@ library(reshape2)
 library(dplyr )
 library(rtweet)
 
-allthetweets <-read_csv("allthetweets.csv")
-tweetswords <- allthetweets %>%
-  select(text, created) 
+
+tweetswords <-read_csv("tweetswords.csv")
 
 tweetswords %>%
   head() %>%
@@ -42,20 +41,24 @@ ui <- fluidPage(
   titlePanel("Tweeting Immigration"),
   sidebarLayout(
     sidebarPanel(
-      dateRangeInput('dateRange',
-                     label = 'Date range input: yyyy-mm-dd',
-                     start = Sys.Date() - 2, end = Sys.Date() + 2
-      )
+      textInput("word", "Word","Data Summary"),
+      verbatimTextOutput("value")
     ),
-    mainPanel(
-      plotOutput("wordcloud"),
-      plotOutput("sentiment")
-    )
-  )
-)
+  mainPanel(
+    plotOutput("test"), #placeholder
+    plotOutput("wordcloud"),
+    plotOutput("sentiment"))
+  ))
 
 
-server <- function(input, output) {
+
+server <- shinyServer(function(input, output) {
+  
+  #output$test <- renderTable({
+  #  print(input$word[1])
+  #})
+  
+  
   output$wordcloud <- renderPlot({
     tweet_words_count <- tweet_dates2 %>%
       count(word, sort = TRUE) %>%
@@ -64,10 +67,11 @@ server <- function(input, output) {
              word != "immigrant",
              word != "#immigration",
              word != "immigrants")
-    
     wordcloud(words = tweet_words_count$word, freq = tweet_words_count$n,
               min.freq = 1500, random.order = FALSE, colors = TRUE)
+    output$value <- renderText({ input$word })
   })
-}
+  
+})
 
 shinyApp(ui = ui, server = server)

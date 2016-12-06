@@ -640,7 +640,6 @@ write_csv(tweets_160416_to_160815, "tweets_160416_to_160815")
 
 
 
-
 #26
 # set the sequence of dates to search over
 dates26 <- seq(as.Date("2016-08-15"), as.Date("2016-08-31"), by = "day") %>%
@@ -664,3 +663,182 @@ tweets_joined26 <- bind_rows(tweets26) %>%
   # remove duplicate tweets that were retrieved in multiple searches
   unique()
 str(tweets_joined26)
+
+
+#27
+# set the sequence of dates to search over
+dates27 <- seq(as.Date("2016-09-01"), as.Date("2016-09-15"), by = "day") %>%
+  as.character()
+
+# create a list to store the tweets
+tweets27 <- vector("list", length(dates27))
+
+# use a for loop to run the immigration search starting on each date
+for(i in seq_along(dates27)) {
+  tweets27[[i]] <- searchTwitter('immigrant | immigration & -RT', 
+                                 n=1000, lang='en',  
+                                 since= dates27[i]) %>%
+    strip_retweets(strip_manual = TRUE, strip_mt = TRUE) %>%
+    twListToDF() %>%
+    tbl_df
+}
+
+# collapse tweets into a single data frame
+tweets_joined27 <- bind_rows(tweets27) %>%
+  # remove duplicate tweets that were retrieved in multiple searches
+  unique()
+str(tweets_joined27)
+
+
+
+
+
+
+
+
+
+
+
+#28
+# set the sequence of dates to search over
+dates28 <- seq(as.Date("2016-09-16"), as.Date("2016-09-30"), by = "day") %>%
+  as.character()
+
+# create a list to store the tweets
+tweets28 <- vector("list", length(dates28))
+
+# use a for loop to run the immigration search starting on each date
+for(i in seq_along(dates28)) {
+  tweets28[[i]] <- searchTwitter('immigrant | immigration & -RT', 
+                                 n=1000, lang='en',  
+                                 since= dates28[i]) %>%
+    strip_retweets(strip_manual = TRUE, strip_mt = TRUE) %>%
+    twListToDF() %>%
+    tbl_df
+}
+
+# collapse tweets into a single data frame
+tweets_joined28 <- bind_rows(tweets28) %>%
+  # remove duplicate tweets that were retrieved in multiple searches
+  unique()
+str(tweets_joined28)
+
+
+#29
+# set the sequence of dates to search over
+dates29 <- seq(as.Date("2016-10-01"), as.Date("2016-10-15"), by = "day") %>%
+  as.character()
+
+# create a list to store the tweets
+tweets29 <- vector("list", length(dates29))
+
+# use a for loop to run the immigration search starting on each date
+for(i in seq_along(dates29)) {
+  tweets29[[i]] <- searchTwitter('immigrant | immigration & -RT', 
+                                 n=1000, lang='en',  
+                                 since= dates29[i]) %>%
+    strip_retweets(strip_manual = TRUE, strip_mt = TRUE) %>%
+    twListToDF() %>%
+    tbl_df
+}
+
+# collapse tweets into a single data frame
+tweets_joined29 <- bind_rows(tweets29) %>%
+  # remove duplicate tweets that were retrieved in multiple searches
+  unique()
+str(tweets_joined29)
+
+
+tweets_160816_to_161015 <- bind_rows(tweets26, tweets27, tweets28, tweets29)
+write_csv(tweets_160816_to_161015, "tweets_160816_to_161015")
+
+
+
+#30
+# set the sequence of dates to search over
+dates30 <- seq(as.Date("2016-10-16"), as.Date("2016-10-31"), by = "day") %>%
+  as.character()
+
+# create a list to store the tweets
+tweets30 <- vector("list", length(dates30))
+
+# use a for loop to run the immigration search starting on each date
+for(i in seq_along(dates30)) {
+  tweets30[[i]] <- searchTwitter('immigrant | immigration & -RT', 
+                                 n=1000, lang='en',  
+                                 since= dates30[i]) %>%
+    strip_retweets(strip_manual = TRUE, strip_mt = TRUE) %>%
+    twListToDF() %>%
+    tbl_df
+}
+
+# collapse tweets into a single data frame
+tweets_joined30 <- bind_rows(tweets30) %>%
+  # remove duplicate tweets that were retrieved in multiple searches
+  unique()
+str(tweets_joined30)
+
+#31
+# set the sequence of dates to search over
+dates31 <- seq(as.Date("2016-11-01"), as.Date("2016-11-15"), by = "day") %>%
+  as.character()
+
+# create a list to store the tweets
+tweets31 <- vector("list", length(dates31))
+
+# use a for loop to run the immigration search starting on each date
+for(i in seq_along(dates31)) {
+  tweets31[[i]] <- searchTwitter('immigrant | immigration & -RT', 
+                                 n=1000, lang='en',  
+                                 since= dates31[i]) %>%
+    strip_retweets(strip_manual = TRUE, strip_mt = TRUE) %>%
+    twListToDF() %>%
+    tbl_df
+}
+
+# collapse tweets into a single data frame
+tweets_joined31 <- bind_rows(tweets31) %>%
+  # remove duplicate tweets that were retrieved in multiple searches
+  unique()
+str(tweets_joined31)
+
+
+
+
+#32
+# set the sequence of dates to search over
+dates32 <- seq(as.Date("2016-11-16"), as.Date("2016-11-30"), by = "day") %>%
+  as.character()
+
+# create a list to store the tweets
+tweets32 <- vector("list", length(dates32))
+
+# use a for loop to run the immigration search starting on each date
+for(i in seq_along(dates32)) {
+  tweets32[[i]] <- searchTwitter('immigrant | immigration & -RT', 
+                                 n=1000, lang='en',  
+                                 since= dates32[i]) %>%
+    strip_retweets(strip_manual = TRUE, strip_mt = TRUE) %>%
+    twListToDF() %>%
+    tbl_df
+}
+
+# collapse tweets into a single data frame
+tweets_joined32 <- bind_rows(tweets32) %>%
+  # remove duplicate tweets that were retrieved in multiple searches
+  unique()
+str(tweets_joined32)
+
+tweets_161016_to_161130 <- bind_rows(tweets30, tweets31, tweets32)
+write_csv(tweets_161016_to_161130, "tweets_161016_to_161130.csv")
+
+excel1 <- read_csv("tweets_til_151130.csv")
+excel2 <- read_csv("tweets_151130_to_160415")
+excel3 <- read_csv("tweets_160416_to_160815")
+excel4 <- read_csv("tweets_160816_to_161015")
+excel5 <- read_csv("tweets_161016_to_161130.csv")
+
+allthetweets <- bind_rows(excel1,excel2,excel3,excel4,excel5)
+write_csv(allthetweets, "allthetweets.csv")
+
+View(allthetweets)

@@ -17,6 +17,8 @@ library(scales)
 library(reshape2)
 library(dplyr )
 library(rtweet)
+library(feather)
+library(RColorBrewer)
 
 
 tweetswords <-read_csv("tweetswords.csv")
@@ -32,46 +34,69 @@ tweet_words <-tweetswords %>%
   mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>%
   unnest_tokens(word, text, token = "regex", pattern = reg) %>%
   filter(!word %in% stop_words$word,
-         str_detect(word, "[a-z]")) 
+         str_detect(word, "[a-z]"))
+ 
+ tweet_dates2 <- tweet_words %>%
+separate(created, into = c("date", "time"), sep = -9)
 
-tweet_dates2 <- tweet_words %>%
-  separate(created, into = c("date", "time"), sep = -9)
+feather::write_feather(tweet_dates2, "tweet_dates2.feather")
 
+tweet_dates2 <- feather::read_feather("tweet_dates2.feather")
+
+
+#User Interface
 ui <- fluidPage(
   titlePanel("Tweeting Immigration"),
   sidebarLayout(
     sidebarPanel(
-      textInput("word", "Word","Data Summary"),
-      verbatimTextOutput("value")
+      selectizeInput(
+        "word",
+        "Words",
+        choices = sort(unique(tweet_words$word)),
+        multiple = TRUE
+      )
     ),
-  mainPanel(
-    plotOutput("test"), #placeholder
-    plotOutput("wordcloud"),
-    plotOutput("sentiment"))
+    mainPanel(
+      plotOutput("wordcloud"),
+      plotOutput("sentiment"))
   ))
 
 
-
+#Server Code
 server <- shinyServer(function(input, output) {
   
-  #output$test <- renderTable({
-  #  print(input$word[1])
-  #})
-  
+  #Filter Tweets
+  filtered_tweets <- reactive({
+    if(is.null(input$word)) {
+      return(NULL)
+    }
+    
+    #Function to take term input, filter, and inner join with other words
+    tweet_words %>%
+      filter(word %in% input$word) %>%
+      select(id) %>%
+      unique() %>%
+      inner_join(tweet_words)
+  })
   
   output$wordcloud <- renderPlot({
-    tweet_words_count <- tweet_dates2 %>%
+    if(is.null(filtered_tweets())){
+      return()
+    }
+    
+    tweet_words_count <- filtered_tweets() %>%
       count(word, sort = TRUE) %>%
       arrange(desc(n)) %>%
       filter(word != "immigration",
              word != "immigrant",
              word != "#immigration",
              word != "immigrants")
-    wordcloud(words = tweet_words_count$word, freq = tweet_words_count$n,
-              min.freq = 1500, random.order = FALSE, colors = TRUE)
-    output$value <- renderText({ input$word })
+    
+    wordcloud(words = tweet_words_count$word, freq = tweet_words_count$n, scale=c(8,.3),
+              min.freq = 500, random.order = FALSE, rot.per=.15, colors = brewer.pal(8,"Dark2"))
   })
   
 })
 
 shinyApp(ui = ui, server = server)
+

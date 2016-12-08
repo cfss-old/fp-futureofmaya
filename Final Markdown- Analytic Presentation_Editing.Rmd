@@ -1,0 +1,338 @@
+---
+title: "Final Project Markdown"
+author: "Carly Offidani-Bertrand"
+date: "December 7, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(twitteR)
+library(httpuv)
+library(ggplot2)
+library(scales)
+library(readr)
+library(tm)
+library(stringr)
+library(wordcloud)
+library(knitr)
+library(twitteR)
+library(tidytext)
+library(syuzhet)
+library(lubridate)
+library(ggplot2)
+library(scales)
+library(reshape2)
+library(dplyr)
+library(rtweet)
+library(tidyverse)
+library(RXKCD)
+library(tm)
+library(wordcloud)
+library(RColorBrewer)
+```
+
+
+```{r setup data, include= FALSE}
+allthetweets <-read_csv("allthetweets.csv") %>%
+  distinct()
+tweetswords <- allthetweets %>%
+  select(text) 
+
+reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
+
+tweet_words <-tweetswords %>%
+  filter(!str_detect(text, '^"')) %>%
+  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>%
+  unnest_tokens(word, text, token = "regex", pattern = reg) %>%
+  filter(!word %in% stop_words$word,
+         str_detect(word, "[a-z]")) 
+
+tweetswords %>%
+  head() %>%
+  knitr::kable(caption = "Tweets with the word immigration")
+
+tweet_words_count <- tweet_words %>%
+  count(word, sort = TRUE) %>%
+  arrange(desc(n))
+```
+###Tweeting Immigration
+
+Given the current political climate, and the researhers' interest in immigration, we took the opportunity to analyze the surge of social media discussion around the topic of immigration. We wanted to see what sort of ideas and topics the discussion has been centered around by exmaining the most popular topic words that are being included in tweets about immigration, as well as the varying sentiments related to these different topics. We think this fits into a larger conversation about belonging, and what it is to be an American, so we also used this framework of analysis for people who were tweeting about being American. The results were as follows.
+
+First we examined the diversity of words that were most popular in tweets that contained the word immigrant or immigration. 
+
+```{r, echo=FALSE}
+
+ggplot(tweet_words_count[1:20,], aes(x= reorder(word, -n), y = n)) +
+  geom_bar(alpha = 0.8, stat = "identity", show.legend = FALSE) + 
+  coord_flip() +
+  xlab("Number of Occurences") + ylab("Word") + ggtitle("Words Used in Tweets about Immigration")
+
+
+```
+
+This wordcloud depicts our findings in a more visually appealing way. 
+
+```{r wordcloud immigration/immigrant, echo= FALSE}
+
+wordcloud_words <- tweet_words_count[-c(1, 2, 4, 5, 8), ]
+wordcloud(words = wordcloud_words$word, freq = wordcloud_words$n, scale=c(8,.3),
+              min.freq = 500, random.order = FALSE, rot.per=.15, colors = brewer.pal(8,"Dark2"))
+
+```
+
+After examining these topics, we felt it would be important to understand how these ideas and topics are experienced by those tweeting about them, and sought to analyze the underlying sentiment of these tweets.
+
+
+
+```{r sentiment immigrant/immigration, echo=FALSE}
+#coming up with a total sentiment score and graph
+immigrant_tweets_with_sentiment <- read_csv("immigrant_tweets_with_sentiment.csv")
+sentimentTotals <- data.frame(colSums(immigrant_tweets_with_sentiment[,c("anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust")]))
+names(sentimentTotals) <- "count"
+sentimentTotals <- cbind("sentiment" = rownames(sentimentTotals), sentimentTotals)
+rownames(sentimentTotals) <- NULL
+ggplot(data = sentimentTotals, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+  theme(legend.position = "none") +
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score for All Tweets about Immigration")
+
+```
+
+Unurprisingly, the highest sentiment we observed was fear, but the second highest sentiment was trust. Given that these are contradictory emotions, we wanted to explore if the tweets were largely negative or largely positive, and what words contributed most to these sentiments. 
+
+```{r positive negative immigration/immigrant tweets, echo= FALSE}
+
+#looking at it in terms of positive or negative
+
+sentimentTotals2 <- data.frame(colSums(immigrant_tweets_with_sentiment[,c("positive","negative")]))
+names(sentimentTotals2) <- "count"
+sentimentTotals2 <- cbind("sentiment" = rownames(sentimentTotals2), sentimentTotals2)
+ggplot(data = sentimentTotals2, aes(x = sentiment, y = count)) +
+geom_bar(aes(fill = sentiment), stat = "identity") +
+theme(legend.position = "none") +
+xlab("Sentiment") + ylab("Total Count") + 
+ggtitle("Total Sentiment Score for All Tweets")
+```
+
+
+Another surprise, there are more positive sentiments than negative. What words or themes are being circulated that might account for these trends?
+
+
+``` {r setup contibuting words to sentiment immigrant/immigration, include= FALSE}
+
+##figuring out the words that contribute most to these sentiments
+
+
+tweet_words_count <- tweet_words %>%
+  count(word, sort = TRUE) %>%
+  arrange(desc(n))
+
+tweet_words_count
+## we need to remove the words immigrant, immigration, immigrants, #immigrant, and trump, because it is throwing off our sentiments
+
+sentiment_words <- tweet_words_count[-c(1, 2, 3, 5, 6), ]
+
+sentiment_words
+
+nrcfear <- get_sentiments("nrc") %>% 
+  filter(sentiment == "fear")
+nrcfear
+
+nrctrust <- get_sentiments("nrc") %>% 
+  filter(sentiment == "trust")
+
+sentiment_words %>%
+  semi_join(nrcfear) %>%
+  count(word, sort = TRUE) %>%
+  head %>%
+  knitr::kable(caption = "Words that affect fearful sentiment")
+
+sentiment_words%>%
+  semi_join(nrctrust) %>%
+  count(word, sort = TRUE) %>%
+  kable(caption = "Words that affect trusting sentiment")
+
+
+bing_word_counts <- sentiment_words %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+bing_word_counts
+```
+
+
+
+
+``` {r words contributing to sentiment, echo=FALSE}
+
+bing_word_counts %>%
+  filter(n > 1500) %>%
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_bar(alpha = 0.8, stat = "identity") +
+  labs(y = "Contribution to sentiment",
+       x = NULL) +
+  coord_flip()
+```
+
+##After gaining a basic understanding of the sentiments and topics being circulated in all texts that mentioned immigration or immigrants, we decided to compare these to specific topics within immigration, to see how these sentiments and discourses differ. 
+
+```{r set up alternative hashtags, include= FALSE}
+
+##getting tweets out of data and filtering them
+df_ilegal <- read.csv("tweets_illegal.csv", stringsAsFactors = FALSE)
+df_ilegal <- df_ilegal %>%
+  select(screenName, text, created) 
+
+df_immigrant4trump <- read.csv("immigrant4trump.csv", stringsAsFactors = FALSE)
+df_immigrant4trump <- df_immigrant4trump %>%
+  select(screenName, text, created) 
+
+df_american <- read.csv("tweets_american.csv", stringsAsFactors = FALSE)
+df_american <- df_american %>%
+  select(screenName, text, created) 
+
+#Sentiment analysis
+
+###Sentiment analysis fir df_ilegal
+#calculating sentiments from words
+
+mySentiment_ilegal <- get_nrc_sentiment(df_ilegal$text)
+
+
+#binding sentiments to dataframe
+
+
+illegal_tweets_with_sentiment <- cbind(df_ilegal, mySentiment_ilegal)
+View(illegal_tweets_with_sentiment)
+write_csv(illegal_tweets_with_sentiment, "illegal_tweets_with_sentiment.csv")
+
+#calculating sentiments from words
+
+mySentiment_american <- get_nrc_sentiment(df_american$text)
+
+#binding sentiments to dataframe
+
+
+american_tweets_with_sentiment <- cbind(df_american, mySentiment_american)
+View(american_tweets_with_sentiment)
+write_csv(american_tweets_with_sentiment, "american_tweets_with_sentiment.csv")
+
+#calculating sentiments from words
+
+mySentiment_immigrant4trump <- get_nrc_sentiment(df_immigrant4trump$text)
+
+#binding sentiments to dataframe
+
+
+immigrant4trump_tweets_with_sentiment <- cbind(df_immigrant4trump, mySentiment_immigrant4trump)
+View(immigrant4trump_tweets_with_sentiment)
+write_csv(immigrant4trump_tweets_with_sentiment, "immigrant4trump_tweets_with_sentiment.csv")
+```
+
+
+
+```{r sentiment analysis illegal immigrant, echo= FALSE}
+sentimentTotals_illegal_tweets <- data.frame(colSums(illegal_tweets_with_sentiment[,c("anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust")]))
+names(sentimentTotals_illegal_tweets) <- "count"
+sentimentTotals_illegal_tweets <- cbind("sentiment" = rownames(sentimentTotals), sentimentTotals)
+rownames(sentimentTotals_illegal_tweets) <- NULL
+ggplot(data = sentimentTotals_illegal_tweets, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+  theme(legend.position = "none") +
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score for Tweets that discuss Illegal Immigrants")
+```
+
+```{r topic analysis illegal immigrant, echo=FALSE}
+tweet_words_count_illegal_immigrant <- tweet_words_illegal_immigrant %>%
+  count(word, sort = TRUE) %>%
+  arrange(desc(n))
+
+
+
+ggplot(tweet_words_count_illegal_immigrant[1:20,], aes(x= reorder(word, -n), y = n)) +
+  geom_bar(alpha = 0.8, stat = "identity", show.legend = FALSE) + 
+  coord_flip() +
+  xlab("Number of Occurances") + ylab("Word") + ggtitle("Words Used in Tweets about Immigration")
+```
+
+```{r wordcloud illegal immigrant, echo= FALSE}
+wordcloud_words_illegal_immigrant <- tweet_words_count_illegal_immigrant[-c(1, 2, 4, 5, 8), ]
+wordcloud(words = wordcloud_words_illegal_immigrant$word, freq = wordcloud_words_illegal_immigrant$n, min.freq = 1500,
+          random.order = FALSE, colors = TRUE)
+```
+
+##Analysis for the Word American
+
+```{r sentiment analysis for americans, echo=FALSE}
+sentimentTotals_american <- data.frame(colSums(american_tweets_with_sentiment[,c("anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust")]))
+names(sentimentTotals_american) <- "count"
+sentimentTotals_american <- cbind("sentiment" = rownames(sentimentTotals_american), sentimentTotals_american)
+rownames(sentimentTotals_american) <- NULL
+ggplot(data = sentimentTotals_american, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+  theme(legend.position = "none") +
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score for All Tweets about Americans")
+```
+#Not surprisingly, people are much more positive when discussing being American, than when discussing immigration.
+
+```{r topic analysis american, echo= FALSE}
+tweet_words_count_american <- tweet_words_illegal_immigrant %>%
+  count(word, sort = TRUE) %>%
+  arrange(desc(n))
+
+
+
+ggplot(tweet_words_count_american[1:20,], aes(x= reorder(word, -n), y = n)) +
+  geom_bar(alpha = 0.8, stat = "identity", show.legend = FALSE) + 
+  coord_flip() +
+  xlab("Number of Occurances") + ylab("Word") + ggtitle("Words Used in Tweets about Americans")
+```
+
+```{r wordcloud american, echo=FALSE}
+
+wordcloud_words_illegal_american <- tweet_words_count_american[-c(1, 2, 4, 5, 8), ]
+wordcloud(words = wordcloud_words_american$word, freq = wordcloud_words_american$n, min.freq = 1500,
+          random.order = FALSE, colors = TRUE)
+```
+
+#And now, to examine those Immigrants for Trump.
+
+```{r sentiment analysis for immigrant4trump}
+sentimentTotals_immigrant4trump <- data.frame(colSums(immigrant4trump_tweets_with_sentiment[,c("anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust")]))
+names(sentimentTotals_immigrant4trump) <- "count"
+sentimentTotals_immigrant4trump <- cbind("sentiment" = rownames(sentimentTotals_american), sentimentTotals_american)
+rownames(sentimentTotals_immigrant4trump) <- NULL
+ggplot(data = sentimentTotals_immigrant4trump, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+  theme(legend.position = "none") +
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score for All Tweets about Immigration")
+```
+
+
+
+```{r topic analysis immigrant4trump, echo= FALSE}
+
+tweet_words_count_immigrant4trump <- tweet_words_immigrant4trump %>%
+  count(word, sort = TRUE) %>%
+  arrange(desc(n))
+
+
+
+ggplot(tweet_words_count_immigrant4trump[1:20,], aes(x= reorder(word, -n), y = n)) +
+  geom_bar(alpha = 0.8, stat = "identity", show.legend = FALSE) + 
+  coord_flip() +
+  xlab("Number of Occurances") + ylab("Word") + ggtitle("Words Used in Tweets about Immigrants 4 Trump")
+```
+
+````{ r wordcloud immigrant4 trump}
+
+wordcloud_words_immigrant4trump <- tweet_words_count_immigrant4trump[-c(1, 2, 4, 5, 8), ]
+wordcloud(words = wordcloud_words_immigrant4trump$word, freq = wordcloud_words_immigrant4trump$n, min.freq = 1500,
+          random.order = FALSE, colors = TRUE)
+

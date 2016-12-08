@@ -1,0 +1,312 @@
+---
+title: "Final Project Markdown"
+author: "Carly Offidani-Bertrand and Rita Biagioli"
+date: "December 7, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(twitteR)
+library(httpuv)
+library(ggplot2)
+library(scales)
+library(readr)
+library(tm)
+library(stringr)
+library(wordcloud)
+library(knitr)
+library(twitteR)
+library(tidytext)
+library(syuzhet)
+library(lubridate)
+library(ggplot2)
+library(scales)
+library(reshape2)
+library(dplyr )
+library(rtweet)
+library(tidyverse)
+library(RXKCD)
+library(tm)
+library(wordcloud)
+library(RColorBrewer)
+```
+
+
+```{r setup data, include= FALSE}
+#1
+allthetweets <-read_csv("allthetweets.csv") %>%
+  distinct()
+tweetswords <- allthetweets %>%
+  select(text, created, id) 
+
+tweetswords %>%
+  head() %>%
+  knitr::kable(caption = "Tweets with the word immigration")
+
+reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
+
+tweet_words <-tweetswords %>%
+  filter(!str_detect(text, '^"')) %>%
+  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>%
+  unnest_tokens(word, text, token = "regex", pattern = reg) %>%
+  filter(!word %in% stop_words$word,
+         str_detect(word, "[a-z]")) 
+
+
+tweet_words_count <- tweet_words %>%
+  count(word, sort = TRUE) %>%
+  arrange(desc(n))
+```
+###Tweeting Immigration
+
+Given the current political climate, and the researchers' interest in immigration, we took the opportunity to analyze the surge of social media discussion around the topic of immigration. We wanted to see what sort of ideas and topics the discussion has been centered around by exmaining the most popular topic words that are being included in tweets about immigration, as well as the varying sentiments related to these different topics. We think this fits into a larger conversation about belonging, and what it is to be an American, so we also used this framework of analysis for people who were tweeting about being American. 
+
+Our corpus of tweets was collected at the end of November by searching for any tweet using the word "immigrant" or the word "immigration." The results were as follows.
+
+First we examined the diversity of words that were most popular in tweets that contained the word immigrant or immigration: 
+
+```{r echo=FALSE}
+#2
+ggplot(tweet_words_count[1:20,], aes(x= reorder(word, -n), y = n)) +
+  geom_bar(alpha = 0.8, stat = "identity", show.legend = FALSE) + 
+  coord_flip() +
+  xlab("Number of Occurances") + ylab("Word") + ggtitle("Words Used in Tweets about Immigration")
+
+
+```
+
+This wordcloud depicts our findings in a more visually appealing way. 
+
+```{r wordcloud immigration/immigrant, echo= FALSE}
+
+#3
+wordcloud_words <- tweet_words_count[-c(1, 2, 4, 5, 8), ]
+wordcloud(words = wordcloud_words$word, freq = wordcloud_words$n, scale=c(8,.3),
+              min.freq = 500, random.order = FALSE, rot.per=.15, colors = brewer.pal(8,"Dark2"))
+
+```
+
+
+After examining these topics, we felt it would be important to understand how these ideas and topics are experienced by those tweeting about them, and sought to analyze the underlying sentiment of these tweets.
+
+
+```{r sentiment immigrant/immigration, include = FALSE}
+#5
+
+#coming up with a total sentiment score and graph
+immigrant_tweets_with_sentiment <- read_csv("immigrant_tweets_with_sentiment.csv")
+sentimentTotals <- data.frame(colSums(immigrant_tweets_with_sentiment[,c("anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust")]))
+
+names(sentimentTotals) <- "count"
+sentimentTotals <- cbind("sentiment" = rownames(sentimentTotals), sentimentTotals)
+rownames(sentimentTotals) <- NULL
+```
+
+```{r echo=FALSE}
+ggplot(data = sentimentTotals, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+  theme(legend.position = "none") +
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score for All Tweets about Immigration")
+
+```
+
+Unurprisingly, the highest sentiment we observed was fear, but the second highest sentiment was trust. Given that these are contradictory emotions, we wanted to explore if the tweets were largely negative or largely positive, and what words contributed most to these sentiments. 
+
+```{r positive negative immigration/immigrant tweets, echo= FALSE}
+#6
+
+#looking at it in terms of positive or negative
+
+sentimentTotals2 <- data.frame(colSums(immigrant_tweets_with_sentiment[,c("positive","negative")]))
+names(sentimentTotals2) <- "count"
+sentimentTotals2 <- cbind("sentiment" = rownames(sentimentTotals2), sentimentTotals2)
+ggplot(data = sentimentTotals2, aes(x = sentiment, y = count)) +
+geom_bar(aes(fill = sentiment), stat = "identity") +
+theme(legend.position = "none") +
+xlab("Sentiment") + ylab("Total Count") + 
+ggtitle("Total Sentiment Score for All Tweets")
+```
+
+
+Another surprise, there are more positive sentiments than negative. What words or themes are being circulated that might account for these trends? One possibility is that the algorithm is continually taking "trump" as a verb and counting it as positive.
+
+At some point, we had working code which analyzed which words in the text contributed most to this sentiment. This code can be found in the sentiment analysis R document. However, on the day of reckoning, it decided to get confused, and after several hours of begging it to work, we decided to leave it to rest. 
+
+After gaining a basic understanding of the sentiments and topics being circulated in all texts that mentioned immigration or immigrants, we decided to compare these to specific topics within immigration, to see how these sentiments and discourses differ.
+
+##Analysis for Illegal Immigrants
+
+```{r set up alternative hashtags, include= FALSE}
+#9
+##getting tweets
+
+
+```
+
+
+
+```{r sentiment analysis illegal immigrant, echo= FALSE}
+#10
+illegal_tweets_with_sentiment <- read.csv("illegal_tweets_with_sentiment.csv")
+sentimentTotals_illegal_tweets <- data.frame(colSums(illegal_tweets_with_sentiment[,c("anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust")]))
+names(sentimentTotals_illegal_tweets) <- "count"
+sentimentTotals_illegal_tweets <- cbind("sentiment" = rownames(sentimentTotals_illegal_tweets), sentimentTotals_illegal_tweets)
+rownames(sentimentTotals_illegal_tweets) <- NULL
+
+ggplot(data = sentimentTotals_illegal_tweets, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+  theme(legend.position = "none") +
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score for Tweets that Mention Illegal Immigrants")
+```
+
+It makes sense that there is a great deal of fear and anger in these tweets. One would wonder who exactly is tweeting using this particular term; that could potentially explain the demographic that is fearful and angry.
+
+```{r topic analysis illegal immigrant, echo=FALSE}
+
+
+reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
+
+tweet_words_illegal <- illegal_tweets_with_sentiment %>%
+  filter(!str_detect(text, '^"')) %>%
+  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>%
+  unnest_tokens(word, text, token = "regex", pattern = reg) %>%
+  filter(!word %in% stop_words$word,
+         str_detect(word, "[a-z]")) 
+
+tweet_words_count_illegal_immigrant <- tweet_words_illegal %>%
+  count(word, sort = TRUE) %>%
+  arrange(desc(n))
+
+tweet_words_count_illegal_immigrant <- tweet_words_count_illegal_immigrant[-c(1, 2, 3,4), ]
+
+ggplot(tweet_words_count_illegal_immigrant[1:20,], aes(x= reorder(word, -n), y = n)) +
+  geom_bar(alpha = 0.8, stat = "identity", show.legend = FALSE) + 
+  coord_flip() +
+  xlab("Number of Occurences") + ylab("Word") + ggtitle("Words Used in Tweets About Illegal Immigrants")
+```
+
+```{r wordcloud illegal immigrant, echo= FALSE}
+#12
+wordcloud_words_illegal_immigrant <- tweet_words_count_illegal_immigrant[-c(1, 2, 3,4), ]
+wordcloud(words = wordcloud_words_illegal_immigrant$word, freq = tweet_words_count$n, scale=c(8,.3),min.freq = 100, random.order = FALSE, rot.per=.15, colors = brewer.pal(8,"Dark2"))
+```
+
+The word criminal is prevalent here, and our wordcloud supports that. Perhaps this might indicate that it is actually angry and fearful non-immigrants who are tweeting about illegal immigrants. Such an insight is interesting: it indicates that both groups might be fearful (assuming the immigrants themselves are as well). Doing a concerted study comparing fear and anger among these groups would be interesting. In other words, which emotions motivates which group and to what extent?
+
+
+##Analysis for the Word American
+
+```{r include=FALSE}
+#13
+american_tweets_with_sentiment <- read_csv("american_tweets_with_sentiment.csv")
+sentimentTotals_american <- data.frame(colSums(american_tweets_with_sentiment[,c("anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust")]))
+names(sentimentTotals_american) <- "count"
+sentimentTotals_american <- cbind("sentiment" = rownames(sentimentTotals_american), sentimentTotals_american)
+rownames(sentimentTotals_american) <- NULL
+```
+
+```{r echo= FALSE}
+ggplot(data = sentimentTotals_american, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+  theme(legend.position = "none") +
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score for Tweets that discuss America")
+
+```
+
+
+Not surprisingly, people are much more positive when discussing being American, than when discussing immigration. In general, people trust and are excited by America; in fact, anticipation came up a lot. That might be because...
+
+
+```{r echo= FALSE}
+
+##14
+
+reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
+
+tweet_words_American <- american_tweets_with_sentiment %>%
+  filter(!str_detect(text, '^"')) %>%
+  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>%
+  unnest_tokens(word, text, token = "regex", pattern = reg) %>%
+  filter(!word %in% stop_words$word,
+         str_detect(word, "[a-z]")) 
+
+tweet_words_count_American <- tweet_words_American %>%
+  count(word, sort = TRUE) %>%
+  arrange(desc(n))
+
+tweet_words_count_American <- tweet_words_count_American[-c(1, 2, 9,11,16), ]
+
+
+ggplot(tweet_words_count_American[1:20,], aes(x= reorder(word, -n), y = n)) +
+  geom_bar(alpha = 0.8, stat = "identity", show.legend = FALSE) + 
+  coord_flip() +
+  xlab("Number of Occurances") + ylab("Word") + ggtitle("Words Used in Tweets About Americans")
+```
+
+```{r echo=FALSE}
+#15
+###
+wordcloud_words_American <- tweet_words_count_American[-c(1, 2, 9,11,16), ]
+wordcloud(words = wordcloud_words_American$word, freq = tweet_words_count$n, scale=c(8,.3),min.freq = 100, random.order = FALSE, rot.per=.15, colors = brewer.pal(8,"Dark2"))
+```
+
+Well, that is not exactly what we were expecting, and is somewhat off topic. Apparently, tweets about America more broadly might not be all that relevant to an analysis of immigration. 
+
+##And now, to examine those Immigrants for Trump
+
+```{r include = FALSE}
+#16
+immigrant4trump_tweets_with_sentiment <- read_csv("immigrant4trump_tweets_with_sentiment.csv")
+sentimentTotals_immigrant4trump <- data.frame(colSums(immigrant4trump_tweets_with_sentiment[,c("anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust")]))
+names(sentimentTotals_immigrant4trump) <- "count"
+sentimentTotals_immigrant4trump <- cbind("sentiment" = rownames(sentimentTotals_immigrant4trump), sentimentTotals_immigrant4trump)
+rownames(sentimentTotals_immigrant4trump) <- NULL
+```
+
+```{r echo=FALSE}
+ggplot(data = sentimentTotals_immigrant4trump, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+  theme(legend.position = "none") +
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score for Tweets that discuss Immigrants for Trump")
+
+```
+
+Again, we see a significant amount of fear here, but also surprise. It makes sense that people would be surprised by Immigrants for Trump; we're in fact interested in it because it sounds unexpected. But where does the fear come from? Who is fearful and under what circumstances?
+
+```{r echo= FALSE}
+#17
+reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
+
+tweet_words_immigrant4trump <- immigrant4trump_tweets_with_sentiment %>%
+  filter(!str_detect(text, '^"')) %>%
+  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>%
+  unnest_tokens(word, text, token = "regex", pattern = reg) %>%
+  filter(!word %in% stop_words$word,
+         str_detect(word, "[a-z]")) 
+
+tweet_words_count_immigrant4trump <- tweet_words_immigrant4trump %>%
+  count(word, sort = TRUE) %>%
+  arrange(desc(n))
+
+tweet_words_count_immigrant4trump <- tweet_words_count_immigrant4trump[-c(1, 2), ]
+
+ggplot(tweet_words_count_immigrant4trump[1:20,], aes(x= reorder(word, -n), y = n)) +
+  geom_bar(alpha = 0.8, stat = "identity", show.legend = FALSE) + 
+  coord_flip() +
+  xlab("Number of Occurances") + ylab("Word") + ggtitle("Words Used in Tweets About Immigrants for Trump")
+```
+
+```{r echo= FALSE}
+
+#18
+wordcloud_words_immigrant4trump <- tweet_words_count_immigrant4trump[-c(1, 2), ]
+wordcloud(words = wordcloud_words_immigrant4trump$word, freq = tweet_words_count_immigrant4trump$n, scale=c(8,.3),min.freq = 100, random.order = FALSE, rot.per=.15, colors = brewer.pal(8,"Dark2"))
+```
+
+Looking at our other data, it's not all that clear what's going on here. More analysis regarding this should be conducted to determine exactly who is fearful and why. 
+
+##Conclusion
+
+In Fear of Small Numbers, Arjun Appadurai, an anthropologist, discusses how hateful majorities are motivated by a fear of what are often less powerful minorities if that minority appears to be growing or appears to be a threat in some way. This research in anthropology has been corroborated by many papers in psychology, and it would appear that these tweets additionally corroborate those results: there is a significant amount of fear. Given so much fear, and assuming a relativley unbiased sample, one could conclude that immigrants as well as those opposing immigration are both fearful. Knowing this could help to ameliorate the relationship between these two groups in order to move our nation forward- whatever that might mean- with regard to this issue. 

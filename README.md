@@ -1,5 +1,9 @@
 # Final project
 
-This is the repository for your final project. It is up to you to decide how to structure your files and directories. The final result will be a website created using [R Markdown](http://rmarkdown.rstudio.com/rmarkdown_websites.html).
+THis project was really rough- but we did work really hard on it, and hope we have demonstrated that we have in fact grown.
 
-You can see the rendered example site [here](https://uc-cfss.github.io/fp-template/).
+The final project is the markdown file called "finalfinalginalforevermarkdown", and the website, which can be found here: https://ritabiagioli.shinyapps.io/finalproject2/.
+
+We know we have been a lot of work. We appreciate your efforts to help us, and hope you know that the trouble we caused was not out of a desire to be difficult, but a desire to understand.
+
+Thanks
